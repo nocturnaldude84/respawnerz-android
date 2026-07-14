@@ -2,6 +2,7 @@ package com.app.respawnerz
 
 import android.R.attr.label
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.DownloadManager
 import android.content.Intent
 import android.graphics.Bitmap
@@ -85,7 +86,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.app.respawnerz.ui.theme.GlassBackground
 import com.app.respawnerz.ui.theme.GlassBorder
 import androidx.activity.SystemBarStyle
-
+private const val HOME_URL = "https://respawnerz.in"
 
 enum class AppSection(
     val title: String
@@ -473,12 +474,37 @@ fun RespawnerzWebView(
     startUrl: String,
     onPageLoaded: () -> Unit
 ) {
-    BackHandler(
-        enabled = webView.canGoBack()
-    ) {
-        webView.goBack()
-    }
 
+    val activity = LocalContext.current as? Activity
+
+    BackHandler {
+
+        val currentUrl = webView.url ?: HOME_URL
+
+        if (
+            currentUrl == HOME_URL ||
+            currentUrl == "$HOME_URL/"
+        ) {
+
+            activity?.finish()
+
+        } else {
+
+            while (webView.canGoBack()) {
+
+                webView.goBack()
+
+                val url = webView.url ?: ""
+
+                if (
+                    url == HOME_URL ||
+                    url == "$HOME_URL/"
+                ) {
+                    break
+                }
+            }
+        }
+    }
     AndroidView(
         modifier = Modifier
             .fillMaxSize()
@@ -680,15 +706,29 @@ fun BottomNavigationBar(
                     label = "Share",
                     selected = false,
                     onClick = {
+
+                        val articleTitle = webView.title ?: "Respawnerz"
+
+                        val articleUrl = webView.url ?: "https://respawnerz.in"
+
+                        val shareText = """
+                        🎮 Check this out on Respawnerz!
+
+                        $articleTitle
+
+                        Read more:
+                        $articleUrl
+                        """.trimIndent()
+
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "https://respawnerz.in")
+                            putExtra(Intent.EXTRA_TEXT, shareText)
                         }
 
                         context.startActivity(
                             Intent.createChooser(
                                 shareIntent,
-                                "Share Respawnerz"
+                                "Share via"
                             )
                         )
                     }
