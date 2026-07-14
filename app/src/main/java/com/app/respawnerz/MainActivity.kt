@@ -86,6 +86,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.app.respawnerz.ui.theme.GlassBackground
 import com.app.respawnerz.ui.theme.GlassBorder
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.LocalActivity
 private const val HOME_URL = "https://respawnerz.in"
 
 enum class AppSection(
@@ -475,7 +476,7 @@ fun RespawnerzWebView(
     onPageLoaded: () -> Unit
 ) {
 
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
 
     BackHandler {
 
