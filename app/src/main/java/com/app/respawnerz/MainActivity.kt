@@ -92,6 +92,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Button
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.view.HapticFeedbackConstants
+import android.view.View
+import androidx.compose.ui.platform.LocalView
 
 private const val HOME_URL = "https://respawnerz.in"
 
@@ -136,7 +139,7 @@ class MainActivity : ComponentActivity() {
             var isOffline by remember {
                 mutableStateOf(!isNetworkAvailable(context))
             }
-
+            val currentView = LocalView.current
 
             val webView = remember {
                 WebView(context).apply {
@@ -200,6 +203,7 @@ class MainActivity : ComponentActivity() {
                     isHome = isHome,
                     webView = webView,
                     context = context,
+                    currentView = currentView,
                     onMenuClick = {
                         showMenu = true
                     },
@@ -691,6 +695,9 @@ fun isNetworkAvailable(context: Context): Boolean {
 
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }
+fun performHapticFeedback(view: View) {
+        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+}
 @Composable
 fun OfflineScreen(
     onRetry: () -> Unit
@@ -766,6 +773,7 @@ fun BottomNavigationBar(
     isHome: Boolean,
     webView: WebView,
     context: Context,
+    currentView: View,
     onMenuClick: () -> Unit,
     onOfflineDetected: () -> Unit
 ) {
@@ -814,6 +822,7 @@ fun BottomNavigationBar(
                     label = "Home",
                     selected = true,
                     onClick = {
+                        performHapticFeedback(currentView)
                         webView.loadUrl("https://respawnerz.in")
                     }
                 )
@@ -823,7 +832,7 @@ fun BottomNavigationBar(
                     label = "Refresh",
                     selected = false,
                     onClick = {
-
+                        performHapticFeedback(currentView)
                         if (isNetworkAvailable(context)) {
 
                             webView.reload()
@@ -841,7 +850,7 @@ fun BottomNavigationBar(
                     label = "Share",
                     selected = false,
                     onClick = {
-
+                        performHapticFeedback(currentView)
                         val articleTitle = webView.title ?: "Respawnerz"
 
                         val articleUrl = webView.url ?: "https://respawnerz.in"
@@ -874,6 +883,7 @@ fun BottomNavigationBar(
                     label = "More",
                     selected = false,
                     onClick = {
+                        performHapticFeedback(currentView)
                         onMenuClick()
                     }
                 )
