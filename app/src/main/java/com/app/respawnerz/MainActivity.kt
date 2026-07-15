@@ -63,6 +63,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Text
 import android.content.Context
+import android.webkit.WebResourceError
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
@@ -87,6 +88,11 @@ import com.app.respawnerz.ui.theme.GlassBackground
 import com.app.respawnerz.ui.theme.GlassBorder
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.LocalActivity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.Button
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+
 private const val HOME_URL = "https://respawnerz.in"
 
 enum class AppSection(
@@ -99,8 +105,7 @@ enum class AppSection(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-class MainActivity : ComponentActivity()
-{
+class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -121,12 +126,17 @@ class MainActivity : ComponentActivity()
             var isHome by remember {
                 mutableStateOf(true)
             }
-            var pageLoaded by remember { mutableStateOf(false)
+            var pageLoaded by remember {
+                mutableStateOf(false)
             }
             var showMenu by remember {
                 mutableStateOf(false)
             }
             val context = LocalContext.current
+            var isOffline by remember {
+                mutableStateOf(!isNetworkAvailable(context))
+            }
+
 
             val webView = remember {
                 WebView(context).apply {
@@ -152,247 +162,268 @@ class MainActivity : ComponentActivity()
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                RespawnerzWebView(
-                    webView = webView,
-                    startUrl = "https://respawnerz.in",
-                    onPageLoaded = {
-                        pageLoaded = true
-                    }
-                )
+                if (!isOffline) {
 
-                AnimatedVisibility(
-                    visible = !pageLoaded,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    SplashScreen()
+                    RespawnerzWebView(
+                        webView = webView,
+                        startUrl = "https://respawnerz.in",
+                        onPageLoaded = {
+                            pageLoaded = true
+                            isOffline = false
+                        },
+                        onOfflineDetected = {
+                            isOffline = true
+                        }
+                    )
+
+                } else {
+
+                    OfflineScreen(
+                        onRetry = {
+                            if (isNetworkAvailable(context)) {
+                                isOffline = false
+                                webView.reload()
+                            }
+                        }
+                    )
+
                 }
 
+                AnimatedVisibility(
+                    visible = !pageLoaded && !isOffline,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                SplashScreen()
+            }
                 BottomNavigationBar(
                     isHome = isHome,
                     webView = webView,
                     context = context,
                     onMenuClick = {
                         showMenu = true
+                    },
+                    onOfflineDetected = {
+                        isOffline = true
                     }
                 )
-            }
-            if (showMenu) {
+        }
+        if (showMenu) {
 
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showMenu = false
-                    },
-                    sheetState = rememberModalBottomSheetState(
-                        skipPartiallyExpanded = true
-                    ),
-                    containerColor = Color(0xFF101216).copy(alpha = 0.82f),
-                    contentColor = Color.White
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showMenu = false
+                },
+                sheetState = rememberModalBottomSheetState(
+                    skipPartiallyExpanded = true
+                ),
+                containerColor = Color(0xFF101216).copy(alpha = 0.82f),
+                contentColor = Color.White
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp)
+
+                    Text(
+                        text = "RESPAWNERZ",
+                        color = Color(0xFF00F5D4),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(24.dp)
+                    )
+
+                    GlassCard(
+                        onClick = {
+
+                            webView.loadUrl("https://respawnerz.in")
+
+                            showMenu = false
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Home,
+                            null,
+                            tint = Color(0xFF00F5D4)
+                        )
+
+                        Spacer(Modifier.width(16.dp))
+
+                        Text(
+                            "Home",
+                            color = Color.White,
+                            fontSize = 17.sp
+                        )
+                    }
+
+                    GlassCard(
+                        onClick = {
+
+                            webView.loadUrl("https://respawnerz.in/guides")
+
+                            showMenu = false
+                        }
                     ) {
 
-                        Text(
-                            text = "RESPAWNERZ",
-                            color = Color(0xFF00F5D4),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-
-                        Spacer(
-                            modifier = Modifier.height(24.dp)
-                        )
-
-                        GlassCard(
-                            onClick = {
-
-                                webView.loadUrl("https://respawnerz.in")
-
-                                showMenu = false
-                            }
-                        ) {
-                            Icon(
-                                Icons.Default.Home,
-                                null,
-                                tint = Color(0xFF00F5D4)
-                            )
-
-                            Spacer(Modifier.width(16.dp))
-
-                            Text(
-                                "Home",
-                                color = Color.White,
-                                fontSize = 17.sp
-                            )
-                            }
-
-                        GlassCard(
-                            onClick = {
-
-                                webView.loadUrl("https://respawnerz.in/guides")
-
-                                showMenu = false
-                            }
-                        ) {
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-
-                                Icon(
-                                    imageVector = Icons.Default.MenuBook,
-                                    contentDescription = "Guides",
-                                    tint = Color(0xFF00F5D4)
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.width(12.dp)
-                                )
-
-                                Text(
-                                    text = "Guides",
-                                    color = Color.White,
-                                    fontSize = 17.sp
-                                )
-                            }
-                        }
-
-                            GlassCard(
-                            onClick = {
-
-                                webView.loadUrl("https://respawnerz.in/trailers")
-
-                                showMenu = false
-                            }
-                        ) {
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-
-                                Icon(
-                                    imageVector = Icons.Default.OndemandVideo,
-                                    contentDescription = "Trailers",
-                                    tint = Color(0xFF00F5D4)
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.width(12.dp)
-                                )
-
-                                Text(
-                                    text = "Trailers",
-                                    color = Color.White,
-                                    fontSize = 17.sp
-                                )
-                            }
-                        }
-                            GlassCard(
-                            onClick = {
-
-                                webView.loadUrl("https://respawnerz.in/contact")
-
-                                showMenu = false
-                            }
-                        ) {
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-
-                                Icon(
-                                    imageVector = Icons.Default.Email,
-                                    contentDescription = "Contact Us",
-                                    tint = Color(0xFF00F5D4)
-                                )
-
-                                Spacer(
-                                    modifier = Modifier.width(12.dp)
-                                )
-
-                                Text(
-                                    text = "Contact Us",
-                                    color = Color.White,
-                                    fontSize = 17.sp
-                                )
-                            }
-                        }
-                        HorizontalDivider(
-                            color = Color(0xFF1C2530)
-                        )
-                        Spacer(
-                            modifier = Modifier.height(24.dp)
-                        )
-                        Text(
-                            text = "Version 1.1",
-                            color = Color(0xFF7E8793)
-                        )
-                        HorizontalDivider(
-                            color = Color(0xFF1C2530)
-                        )
-                        Spacer(
-                            modifier = Modifier.height(24.dp)
-                        )
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
 
-                            Box(
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .background(GlassBackground),
-                                contentAlignment = Alignment.Center
-                            ) {
-
-                                Image(
-                                    painter = painterResource(R.drawable.r_logo),
-                                    contentDescription = "Respawnerz Logo",
-                                    modifier = Modifier.size(42.dp)
-                                )
-
-                            }
-
-                            Spacer(
-                                modifier = Modifier.width(16.dp)
+                            Icon(
+                                imageVector = Icons.Default.MenuBook,
+                                contentDescription = "Guides",
+                                tint = Color(0xFF00F5D4)
                             )
 
-                            Column {
+                            Spacer(
+                                modifier = Modifier.width(12.dp)
+                            )
 
-                                Text(
-                                    text = "Ayoub Hassan Adur",
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                            Text(
+                                text = "Guides",
+                                color = Color.White,
+                                fontSize = 17.sp
+                            )
+                        }
+                    }
 
-                                Spacer(
-                                    modifier = Modifier.height(2.dp)
-                                )
+                    GlassCard(
+                        onClick = {
 
-                                Text(
-                                    text = "Founder, Respawnerz",
-                                    color = Color(0xFF7E8793),
-                                    fontSize = 13.sp
-                                )
+                            webView.loadUrl("https://respawnerz.in/trailers")
 
-                            }
+                            showMenu = false
+                        }
+                    ) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.OndemandVideo,
+                                contentDescription = "Trailers",
+                                tint = Color(0xFF00F5D4)
+                            )
+
+                            Spacer(
+                                modifier = Modifier.width(12.dp)
+                            )
+
+                            Text(
+                                text = "Trailers",
+                                color = Color.White,
+                                fontSize = 17.sp
+                            )
+                        }
+                    }
+                    GlassCard(
+                        onClick = {
+
+                            webView.loadUrl("https://respawnerz.in/contact")
+
+                            showMenu = false
+                        }
+                    ) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = "Contact Us",
+                                tint = Color(0xFF00F5D4)
+                            )
+
+                            Spacer(
+                                modifier = Modifier.width(12.dp)
+                            )
+
+                            Text(
+                                text = "Contact Us",
+                                color = Color.White,
+                                fontSize = 17.sp
+                            )
+                        }
+                    }
+                    HorizontalDivider(
+                        color = Color(0xFF1C2530)
+                    )
+                    Spacer(
+                        modifier = Modifier.height(24.dp)
+                    )
+                    Text(
+                        text = "Version 1.1",
+                        color = Color(0xFF7E8793)
+                    )
+                    HorizontalDivider(
+                        color = Color(0xFF1C2530)
+                    )
+                    Spacer(
+                        modifier = Modifier.height(24.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(GlassBackground),
+                            contentAlignment = Alignment.Center
+                        ) {
+
+                            Image(
+                                painter = painterResource(R.drawable.r_logo),
+                                contentDescription = "Respawnerz Logo",
+                                modifier = Modifier.size(42.dp)
+                            )
 
                         }
 
                         Spacer(
-                            modifier = Modifier.height(24.dp)
+                            modifier = Modifier.width(16.dp)
                         )
+
+                        Column {
+
+                            Text(
+                                text = "Ayoub Hassan Adur",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            Spacer(
+                                modifier = Modifier.height(2.dp)
+                            )
+
+                            Text(
+                                text = "Founder, Respawnerz",
+                                color = Color(0xFF7E8793),
+                                fontSize = 13.sp
+                            )
+
+                        }
+
                     }
+
+                    Spacer(
+                        modifier = Modifier.height(24.dp)
+                    )
                 }
             }
         }
     }
 }
+
 @Composable
 fun GlassCard(
     onClick: () -> Unit,
@@ -425,6 +456,7 @@ fun GlassCard(
         )
     }
 }
+
 @Composable
 fun GlassNavItem(
     icon: ImageVector,
@@ -468,12 +500,14 @@ fun GlassNavItem(
         )
     }
 }
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun RespawnerzWebView(
     webView: WebView,
     startUrl: String,
-    onPageLoaded: () -> Unit
+    onPageLoaded: () -> Unit,
+    onOfflineDetected: () -> Unit
 ) {
 
     val activity = LocalActivity.current
@@ -522,7 +556,8 @@ fun RespawnerzWebView(
                         view: WebView?,
                         url: String?,
                         favicon: Bitmap?
-                    ) {
+                    )
+                    {
                         super.onPageStarted(view, url, favicon)
                     }
 
@@ -531,7 +566,20 @@ fun RespawnerzWebView(
                         url: String?
                     ) {
                         super.onPageFinished(view, url)
+
                         onPageLoaded()
+                    }
+
+                    override fun onReceivedError(
+                        view: WebView?,
+                        request: WebResourceRequest?,
+                        error: WebResourceError?
+                    ) {
+                        super.onReceivedError(view, request, error)
+
+                        if (request?.isForMainFrame == true) {
+                            onOfflineDetected()
+                        }
                     }
 
                     override fun shouldOverrideUrlLoading(
@@ -606,19 +654,13 @@ fun RespawnerzWebView(
 
                     dm.enqueue(request)
                 }
-                if (url == null) {
-                    loadUrl(startUrl)
-                }
+                loadUrl(startUrl)
             }
 
         },
-        update = { webView ->
-            if (webView.url != startUrl) {
-                webView.loadUrl(startUrl)
-            }
-        }
     )
 }
+
 @Composable
 fun SplashScreen() {
 
@@ -637,12 +679,95 @@ fun SplashScreen() {
         )
     }
 }
+fun isNetworkAvailable(context: Context): Boolean {
+
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        val network = connectivityManager.activeNetwork ?: return false
+
+        val capabilities =
+            connectivityManager.getNetworkCapabilities(network) ?: return false
+
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
+@Composable
+fun OfflineScreen(
+    onRetry: () -> Unit
+) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+
+            Image(
+                painter = painterResource(R.drawable.r_logo),
+                contentDescription = "Respawnerz Logo",
+                modifier = Modifier.size(72.dp)
+            )
+
+            Text(
+                text = "You're Offline",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            Text(
+                text = "Respawnerz couldn't connect.\nCheck your internet connection and try again.",
+                color = Color.LightGray,
+                textAlign = TextAlign.Center
+            )
+
+            Card(
+                modifier = Modifier
+                    .clickable { onRetry() },
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = GlassBackground
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    GlassBorder
+                )
+            ) {
+
+                Box(
+                    modifier = Modifier
+                        .padding(
+                            horizontal = 28.dp,
+                            vertical = 14.dp
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    Text(
+                        text = "Retry",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun BottomNavigationBar(
     isHome: Boolean,
     webView: WebView,
     context: Context,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    onOfflineDetected: () -> Unit
 ) {
 
     Box(
@@ -698,7 +823,16 @@ fun BottomNavigationBar(
                     label = "Refresh",
                     selected = false,
                     onClick = {
-                        webView.reload()
+
+                        if (isNetworkAvailable(context)) {
+
+                            webView.reload()
+
+                        } else {
+
+                            onOfflineDetected()
+
+                        }
                     }
                 )
 
@@ -747,6 +881,6 @@ fun BottomNavigationBar(
             }
 
         }
-
     }
+}
 }
