@@ -48,7 +48,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -92,6 +92,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Button
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.ui.platform.LocalView
@@ -126,9 +127,6 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            var isHome by remember {
-                mutableStateOf(true)
-            }
             var pageLoaded by remember {
                 mutableStateOf(false)
             }
@@ -139,6 +137,10 @@ class MainActivity : ComponentActivity() {
             var isOffline by remember {
                 mutableStateOf(!isNetworkAvailable(context))
             }
+            var currentUrl by remember {
+                mutableStateOf(HOME_URL)
+            }
+
             val currentView = LocalView.current
 
             val webView = remember {
@@ -174,6 +176,9 @@ class MainActivity : ComponentActivity() {
                             pageLoaded = true
                             isOffline = false
                         },
+                        onUrlChanged = { url ->
+                            currentUrl = url
+                        },
                         onOfflineDetected = {
                             isOffline = true
                         }
@@ -200,7 +205,7 @@ class MainActivity : ComponentActivity() {
                 SplashScreen()
             }
                 BottomNavigationBar(
-                    isHome = isHome,
+                    currentUrl = currentUrl,
                     webView = webView,
                     context = context,
                     currentView = currentView,
@@ -241,33 +246,25 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.height(24.dp)
                     )
 
-                    GlassCard(
-                        onClick = {
+                    Text(
+                        text = "Explore",
+                        color = Color(0xFF7E8793),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
 
-                            webView.loadUrl("https://respawnerz.in")
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                            showMenu = false
-                        }
-                    ) {
-                        Icon(
-                            Icons.Default.Home,
-                            null,
-                            tint = Color(0xFF00F5D4)
-                        )
+                    HorizontalDivider(
+                        color = Color(0xFF1C2530)
+                    )
 
-                        Spacer(Modifier.width(16.dp))
-
-                        Text(
-                            "Home",
-                            color = Color.White,
-                            fontSize = 17.sp
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     GlassCard(
                         onClick = {
 
-                            webView.loadUrl("https://respawnerz.in/guides")
+                            webView.loadUrl("https://respawnerz.in/editorials")
 
                             showMenu = false
                         }
@@ -278,17 +275,13 @@ class MainActivity : ComponentActivity() {
                         ) {
 
                             Icon(
-                                imageVector = Icons.Default.MenuBook,
-                                contentDescription = "Guides",
+                                imageVector = Icons.Default.Article,
+                                contentDescription = "Editorials & Analysis",
                                 tint = Color(0xFF00F5D4)
                             )
 
-                            Spacer(
-                                modifier = Modifier.width(12.dp)
-                            )
-
                             Text(
-                                text = "Guides",
+                                text = "Editorials & Analysis",
                                 color = Color.White,
                                 fontSize = 17.sp
                             )
@@ -325,11 +318,25 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = "Support",
+                        color = Color(0xFF7E8793),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    HorizontalDivider(
+                        color = Color(0xFF1C2530)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     GlassCard(
                         onClick = {
-
                             webView.loadUrl("https://respawnerz.in/contact")
-
                             showMenu = false
                         }
                     ) {
@@ -344,9 +351,7 @@ class MainActivity : ComponentActivity() {
                                 tint = Color(0xFF00F5D4)
                             )
 
-                            Spacer(
-                                modifier = Modifier.width(12.dp)
-                            )
+                            Spacer(modifier = Modifier.width(12.dp))
 
                             Text(
                                 text = "Contact Us",
@@ -355,6 +360,49 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = "About",
+                        color = Color(0xFF7E8793),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    HorizontalDivider(
+                        color = Color(0xFF1C2530)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    GlassCard(
+                        onClick = {
+                            webView.loadUrl("https://respawnerz.in/about")
+                            showMenu = false
+                        }
+                    ) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = "About Respawnerz",
+                                tint = Color(0xFF00F5D4)
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = "About Respawnerz",
+                                color = Color.White,
+                                fontSize = 17.sp
+                            )
+                        }
+                    }
+
                     HorizontalDivider(
                         color = Color(0xFF1C2530)
                     )
@@ -511,6 +559,7 @@ fun RespawnerzWebView(
     webView: WebView,
     startUrl: String,
     onPageLoaded: () -> Unit,
+    onUrlChanged: (String) -> Unit,
     onOfflineDetected: () -> Unit
 ) {
 
@@ -560,9 +609,13 @@ fun RespawnerzWebView(
                         view: WebView?,
                         url: String?,
                         favicon: Bitmap?
-                    )
-                    {
+                    ) {
                         super.onPageStarted(view, url, favicon)
+
+                        url?.let {
+                            Log.d("Respawnerz", "Calling onUrlChanged (started): $it")
+                            onUrlChanged(it)
+                        }
                     }
 
                     override fun onPageFinished(
@@ -770,14 +823,14 @@ fun OfflineScreen(
 
 @Composable
 fun BottomNavigationBar(
-    isHome: Boolean,
+    currentUrl: String,
     webView: WebView,
     context: Context,
     currentView: View,
     onMenuClick: () -> Unit,
     onOfflineDetected: () -> Unit
 ) {
-
+    Log.d("Respawnerz", "BottomNav currentUrl = $currentUrl")
     Box(
         modifier = Modifier.fillMaxSize()
 
@@ -820,31 +873,33 @@ fun BottomNavigationBar(
                 GlassNavItem(
                     icon = Icons.Default.Home,
                     label = "Home",
-                    selected = true,
+                    selected =
+                        currentUrl == HOME_URL ||
+                                currentUrl == "$HOME_URL/",
                     onClick = {
                         performHapticFeedback(currentView)
                         webView.loadUrl("https://respawnerz.in")
                     }
                 )
-
-                GlassNavItem(
-                    icon = Icons.Default.Refresh,
-                    label = "Refresh",
-                    selected = false,
-                    onClick = {
-                        performHapticFeedback(currentView)
-                        if (isNetworkAvailable(context)) {
-
-                            webView.reload()
-
-                        } else {
-
-                            onOfflineDetected()
-
-                        }
-                    }
+                Log.d(
+                    "Respawnerz",
+                    "HOME selected = ${currentUrl == HOME_URL || currentUrl == "$HOME_URL/"} | currentUrl=$currentUrl | HOME_URL=$HOME_URL"
                 )
 
+                GlassNavItem(
+                    icon = Icons.Default.MenuBook,
+                    label = "Guides",
+                    selected =
+                        currentUrl.startsWith("$HOME_URL/guides"),
+                    onClick = {
+                        performHapticFeedback(currentView)
+                        webView.loadUrl("https://respawnerz.in/guides")
+                    }
+                )
+                Log.d(
+                    "Respawnerz",
+                    "GUIDES selected = ${currentUrl.startsWith("$HOME_URL/guides")} | currentUrl=$currentUrl"
+                )
                 GlassNavItem(
                     icon = Icons.Default.Share,
                     label = "Share",
