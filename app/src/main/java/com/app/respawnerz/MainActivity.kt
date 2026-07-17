@@ -362,7 +362,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.height(24.dp)
                     )
                     Text(
-                        text = "Version 1.1",
+                        text = "Version 1.2",
                         color = Color(0xFF7E8793)
                     )
                     HorizontalDivider(
