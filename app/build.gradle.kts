@@ -57,4 +57,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     }

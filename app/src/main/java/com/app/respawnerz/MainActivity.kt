@@ -96,7 +96,8 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.ui.platform.LocalView
-
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import android.view.ViewGroup
 private const val HOME_URL = "https://respawnerz.in"
 
 enum class AppSection(
@@ -410,7 +411,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.height(24.dp)
                     )
                     Text(
-                        text = "Version 1.2",
+                        text = "Version 1.3",
                         color = Color(0xFF7E8793)
                     )
                     HorizontalDivider(
@@ -553,57 +554,76 @@ fun GlassNavItem(
     }
 }
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun RespawnerzWebView(
-    webView: WebView,
-    startUrl: String,
-    onPageLoaded: () -> Unit,
-    onUrlChanged: (String) -> Unit,
-    onOfflineDetected: () -> Unit
-) {
+    @SuppressLint("SetJavaScriptEnabled")
+    @Composable
+    fun RespawnerzWebView(
+        webView: WebView,
+        startUrl: String,
+        onPageLoaded: () -> Unit,
+        onUrlChanged: (String) -> Unit,
+        onOfflineDetected: () -> Unit
+    ) {
+        val activity = LocalActivity.current
 
-    val activity = LocalActivity.current
+        BackHandler {
 
-    BackHandler {
+            val currentUrl = webView.url ?: HOME_URL
 
-        val currentUrl = webView.url ?: HOME_URL
+            if (
+                currentUrl == HOME_URL ||
+                currentUrl == "$HOME_URL/"
+            ) {
 
-        if (
-            currentUrl == HOME_URL ||
-            currentUrl == "$HOME_URL/"
-        ) {
+                activity?.finish()
 
-            activity?.finish()
+            } else {
 
-        } else {
+                while (webView.canGoBack()) {
 
-            while (webView.canGoBack()) {
+                    webView.goBack()
 
-                webView.goBack()
+                    val url = webView.url ?: ""
 
-                val url = webView.url ?: ""
-
-                if (
-                    url == HOME_URL ||
-                    url == "$HOME_URL/"
-                ) {
-                    break
+                    if (
+                        url == HOME_URL ||
+                        url == "$HOME_URL/"
+                    ) {
+                        break
+                    }
                 }
             }
         }
-    }
-    AndroidView(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        factory = {
+        AndroidView(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
 
-            webView.apply {
+            factory = { context ->
 
-                setBackgroundColor(android.graphics.Color.BLACK)
+                val swipeRefreshLayout = SwipeRefreshLayout(context)
+                swipeRefreshLayout.setColorSchemeColors(
+                    android.graphics.Color.parseColor("#00F5D4")
+                )
 
-                webViewClient = object : WebViewClient() {
+                swipeRefreshLayout.setProgressBackgroundColorSchemeColor(
+                    android.graphics.Color.parseColor("#101216")
+                )
+                swipeRefreshLayout.setDistanceToTriggerSync(180)
+                swipeRefreshLayout.setOnRefreshListener {
+                    webView.reload()
+                }
+
+                swipeRefreshLayout.addView(
+                    webView,
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+
+                webView.setBackgroundColor(android.graphics.Color.BLACK)
+
+                webView.webViewClient = object : WebViewClient() {
 
                     override fun onPageStarted(
                         view: WebView?,
@@ -624,6 +644,7 @@ fun RespawnerzWebView(
                     ) {
                         super.onPageFinished(view, url)
 
+                        swipeRefreshLayout.isRefreshing = false
                         onPageLoaded()
                     }
 
@@ -635,6 +656,7 @@ fun RespawnerzWebView(
                         super.onReceivedError(view, request, error)
 
                         if (request?.isForMainFrame == true) {
+                            swipeRefreshLayout.isRefreshing = false
                             onOfflineDetected()
                         }
                     }
@@ -648,10 +670,8 @@ fun RespawnerzWebView(
 
                         return when {
 
-                            // Keep Respawnerz inside the app
                             url.startsWith("https://respawnerz.in") -> false
 
-                            // Everything else opens externally
                             else -> {
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                 context.startActivity(intent)
@@ -661,7 +681,7 @@ fun RespawnerzWebView(
                     }
                 }
 
-                settings.apply {
+                webView.settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = true
                     loadsImagesAutomatically = true
@@ -674,7 +694,8 @@ fun RespawnerzWebView(
 
                     setSupportZoom(false)
                 }
-                setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+
+                webView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
 
                     val request = DownloadManager.Request(Uri.parse(url)).apply {
 
@@ -706,18 +727,18 @@ fun RespawnerzWebView(
                         )
                     }
 
-                    val dm =
-                        context.getSystemService(DownloadManager::class.java)
-
+                    val dm = context.getSystemService(DownloadManager::class.java)
                     dm.enqueue(request)
                 }
-                loadUrl(startUrl)
+
+                if (webView.url == null) {
+                    webView.loadUrl(startUrl)
+                }
+
+                swipeRefreshLayout
             }
-
-        },
-    )
-}
-
+        )
+    }
 @Composable
 fun SplashScreen() {
 
