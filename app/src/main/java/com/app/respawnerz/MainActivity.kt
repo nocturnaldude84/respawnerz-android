@@ -98,6 +98,7 @@ import android.view.View
 import androidx.compose.ui.platform.LocalView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import android.view.ViewGroup
+import androidx.compose.material.icons.filled.SportsEsports
 private const val HOME_URL = "https://respawnerz.in"
 
 enum class AppSection(
@@ -292,7 +293,7 @@ class MainActivity : ComponentActivity() {
                     GlassCard(
                         onClick = {
 
-                            webView.loadUrl("https://respawnerz.in/trailers")
+                            webView.loadUrl("https://respawnerz.in/esports")
 
                             showMenu = false
                         }
@@ -303,8 +304,8 @@ class MainActivity : ComponentActivity() {
                         ) {
 
                             Icon(
-                                imageVector = Icons.Default.OndemandVideo,
-                                contentDescription = "Trailers",
+                                imageVector = Icons.Default.SportsEsports,
+                                contentDescription = "Esports",
                                 tint = Color(0xFF00F5D4)
                             )
 
@@ -313,7 +314,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             Text(
-                                text = "Trailers",
+                                text = "Esports",
                                 color = Color.White,
                                 fontSize = 17.sp
                             )
