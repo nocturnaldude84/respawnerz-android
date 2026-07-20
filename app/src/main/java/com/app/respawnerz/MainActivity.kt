@@ -412,7 +412,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.height(24.dp)
                     )
                     Text(
-                        text = "Version 1.3",
+                        text = "Version 2.0",
                         color = Color(0xFF7E8793)
                     )
                     HorizontalDivider(
@@ -746,16 +746,16 @@ fun SplashScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0B0F)),
+            .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
 
-        Image(
+         Image(
             painter = painterResource(id = R.drawable.respawnerz_splash),
             contentDescription = "Respawnerz Splash",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
-        )
+             modifier = Modifier.fillMaxSize(),
+             contentScale = ContentScale.Fit
+         )
     }
 }
 fun isNetworkAvailable(context: Context): Boolean {
