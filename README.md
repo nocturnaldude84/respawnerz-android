@@ -1,6 +1,29 @@
 # Respawnerz Android
 
+## Features v2.0
+
 Official Android app for Respawnerz.
+
+✨ New
+Powerful article search
+Updated Guides navigation
+Redesigned More menu
+Native offline experience
+Improved sharing
+Better back navigation
+Android-optimized interface
+
+🎨 Improvements
+AMOLED-inspired UI polish
+Better bottom navigation
+Improved loading experience
+Enhanced overall stability
+UI refinements across the app
+
+🛠️ Fixes
+Multiple WebView improvements
+Navigation fixes
+General bug fixes and performance improvements
 
 ## Features v1.3
 
